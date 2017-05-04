@@ -1,0 +1,51 @@
+#!/bin/bash
+
+geometry() {
+  identify -verbose "$1" | awk -F ': ' '/Geometry/{sub(/\+.*/, "", $2); print $2}'
+}
+
+width() {
+  echo "${1%x*}"
+}
+
+height() {
+  echo "${1#*x}"
+}
+
+scale() {
+  echo | awk -v i="$1" -v m="$2" -v p="$3" '{print int(i * (m / p) + 0.9)}'
+}
+
+/2() {
+  echo | awk -v x="$1" '{print int(x / 2)}'
+}
+
+
+file=$1
+
+g=$(geometry "$file")
+
+iw=$(width "$g")
+ih=$(height "$g")
+
+# http://www.size-info.com/photo-paper/l.html
+pw=89
+ph=127
+
+mg=${MG:-30x40}
+mw=$(width "$mg")
+mh=$(height "$mg")
+
+w=$(scale "$iw" "$mw" "$pw")
+h=$(scale "$ih" "$mh" "$ph")
+
+files=()
+for ((i=0;i<4;i++)); do
+  files+=("$file")
+done
+
+montage "${files[@]}" \
+	-resize "$w" -crop "${w}x${h}+0+0" \
+	-tile 2x2 \
+	-geometry "$(/2 $iw)x$(/2 $ih)>" \
+	lontage.jpg
